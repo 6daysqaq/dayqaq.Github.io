@@ -8,16 +8,7 @@
 
 漏洞入口 install.php文件
 
- 
-
 1. 在文件install.php 中
-
-```php
-$config = unserialize(base64_decode(Typecho_Cookie::get('__typecho_config')));
-
-这里存在一个unserialize 反序列化函数 
-```
-
 ```php
 <?php
 
@@ -38,16 +29,22 @@ $type = explode('_', $config['adapter']);
 ?>
 ```
 
+
+```php
+$config = unserialize(base64_decode(Typecho_Cookie::get('__typecho_config')));
+
+这里存在一个unserialize 反序列化函数 
+```
+
 ```php
 base64_decode(Typecho_Cookie::get('__typecho_config')
 ```
 
-然后找到/Typecho/cookie.php文件
+在这句代码中有一个Typecho_Cookie类
+在文件中找到/Typecho/cookie.php文件
 
- 在这Typecho_Cookie类中
 
-可控参数 __typecho_config 传给了$config ，这里的key就是 __typecho_config 可以通过cookie或者post传入$config
-
+在这Typecho_Cookie类中
 ```php
 public static function get($key, $default = NULL)
 
@@ -61,6 +58,8 @@ public static function get($key, $default = NULL)
 
   }
 ```
+ 可控参数 __typecho_config 传给了$config ，这里的key就是 __typecho_config 可以通过cookie或者post传入$config
+
 
  在install.php中还有这句
 
@@ -68,52 +67,56 @@ public static function get($key, $default = NULL)
 $installDb = new Typecho_Db($config['adapter'], $config['prefix']);
 ```
 
-这里实例化了一个类，就可以猜想这个类Typecho_Db 中有没有一些我们可控的魔法函数，
+这里实例化了一个类，就可以猜想这个类Typecho_Db 中有没有一些我们可控的魔法函数，这些魔法函数中有没有一些我们可控的危险函数。
 
-这些魔法函数中有没有一些我们可控的危险函数
-
-接着要到 Typecho_Db这个类中寻找。
+所以接着要到 Typecho_Db这个类中寻找。
 
 
-
- \3. /var/Typecho/Db.php
+在文件 /var/Typecho/Db.php 发现Typecho_Db这个类
 
  在Typecho_Db 这个类中，有魔法函数__construct 但是没有可直接利用的危险函数
 
-变量$adapterName 相当于 我们可控$config中的‘adapter’
+变量$adapterName 相当于 我们可控$config中的'adapter'
 
  
 
-换另一个思路，通过这个类来触发另一个类中的魔法函数
+这时要换另一个思路，就是通过这个类来触发另一个类中的魔法函数，来突破。
 
-在120行代码中，把一个字符串Typecho_Db_Adapter_和一个变量拼接
-
-这时如果用变量$adapterName也就是$config中的‘adapter’来实例化一个类，就会触发魔法函数__toString。
-
- 
-
-（php是一个弱语言，把一个字符串和另一个类拼接在一起，会强制将类转化成字符串，这时就会触发魔法函数__toString）
+分析__construct()函数内代码
 
 
 
  ![wps1](https://user-images.githubusercontent.com/85486547/165091525-f92c7b0d-2527-4ce0-9f8a-c6d73d103b17.jpg)
+ 
+ 
+发现在120行代码中，把一个字符串Typecho_Db_Adapter_和一个变量拼接
+
+
+（php是一个弱语言，把一个字符串和另一个类拼接在一起，会强制将类转化成字符串，这时就会触发魔法函数__toString）
+
+这时如果用变量$adapterName也就是$config中的‘adapter’来实例化一个类，就会触发魔法函数__toString。
 
 
 
 
 
-\4. 接下来就是在文件中查找__toString 的函数
 
-在/var/Typecho/Feed.php 中有__toString函数 在这里依旧没有发现可以直接调用的危险函数.
+
+
+
+所以接下来就是在文件中查找__toString 的函数
+
+而在/var/Typecho/Feed.php 中有__toString函数 在这里依旧没有发现可以直接调用的危险函数.
+
 ![wps2](https://user-images.githubusercontent.com/85486547/165090636-233a768c-3b06-4e61-8ab0-626c240d1f6c.jpg)
 
 
 
 分析代码
 
-在第290行代码中有一个变量取值的操作
+发现在第290行代码中有一个变量取值的操作。
 
-$item 是通过$this->items的foreach循环出来的
+其中$item 是通过$this->items的foreach循环出来的
 
 ![wps3](https://user-images.githubusercontent.com/85486547/165090764-c724975a-340c-4962-8eaa-cc8d5ab66cdc.jpg)
 
@@ -123,7 +126,7 @@ $item 是通过$this->items的foreach循环出来的
 
 说明$this->_items是我们可控的，也就意味着$item[‘author’] 也是可控的。
 
- 
+![wps4](https://user-images.githubusercontent.com/85486547/165090803-ddffbf83-0d25-49e5-91bc-3075dddef070.jpg) 
 
 这时，如果将$item[‘author’]也定义为一个类，当$item[‘author’]->screenName时
 
@@ -132,28 +135,31 @@ $item 是通过$this->items的foreach循环出来的
 所以当代码执行到290行：$item[‘author’]->screenName
 
 就会触发__get()魔法函数。
-![wps4](https://user-images.githubusercontent.com/85486547/165090803-ddffbf83-0d25-49e5-91bc-3075dddef070.jpg)
+
+
 
 
  
 
-\5. 接着在文件中搜索__get()函数
+所以接着在文件中搜索__get()函数
 
-文件/var/Typecho/Request.php
+在文件/var/Typecho/Request.php中
 
-Typecho_Request类
+有Typecho_Request类
 
-发现__get()魔法函数调用了get函数
+发现__get()魔法函数，在__get()魔法函数中调用了get()函数
 
 ![wps5](https://user-images.githubusercontent.com/85486547/165090850-c06bfcb5-075a-48d8-95d6-86440a85d047.jpg)
 
  
 
-get()函数 用调用了_applyFilter()函数
+get()函数中 用调用了_applyFilter()函数
 
 
  
 ![wps6](https://user-images.githubusercontent.com/85486547/165090884-2b9d34ea-85f9-4a2d-ae0c-323b48089cc8.jpg)
+
+
 
 ```php
 在_applyFilter()函数中发现 array_map()函数和call_user_func()函数
@@ -162,7 +168,8 @@ array_map() ：返回用户自定义函数作用后的数组。回调函数接�
 
 array_map(function,array1,array2,array3...)
 
-![wps7](https://user-images.githubusercontent.com/85486547/165090944-481e59fe-f53c-475c-9605-718f0b4ca527.jpg)
+
+
 
 call_user_func() ：调用回调函数，第一个参数 callback 是被调用的回调函数，其余参数是回调函数的参数。参数可以有多个，也可以是数组。
 
@@ -170,6 +177,7 @@ call_user_func() ：调用回调函数，第一个参数 callback 是被调用�
 这两个函数可以执行任意代码，这时要 分析call_user_func($filter,$value)中变量$filter和$value 是否可控，如果不可控就不可以直接利用。
 ```
 
+![wps7](https://user-images.githubusercontent.com/85486547/165090944-481e59fe-f53c-475c-9605-718f0b4ca527.jpg)
  
 
 ```php
@@ -184,7 +192,6 @@ call_user_func() ：调用回调函数，第一个参数 callback 是被调用�
 
 
 ```php
-/var/Typecho/Request.php
 
 在get()函数中可以看到$value是通过 _params[$key] 来获取的，在Typecho_Request类代码第25行  private $_params = array(); 中可以看到 $_params 是可控的，也就是说
 
