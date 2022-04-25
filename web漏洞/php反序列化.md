@@ -625,8 +625,9 @@ signature (可空):签名，放在末尾。
 3. 文件操作函数的参数可控，且`:`、`/`、`phar`等特殊字符没有被过滤。
 
    #### 受影响的函数
+![image-20220425153242033](https://user-images.githubusercontent.com/85486547/165104935-777cd0a4-09b9-4a35-b6f6-aa5ee72c6edd.png)
 
-   ![](F:\长亭\image-20220425153242033.png)
+
 
 实际上不止这些，也可以参考这篇链接，里面有详细说明https://blog.zsxsoft.com/post/38
 
