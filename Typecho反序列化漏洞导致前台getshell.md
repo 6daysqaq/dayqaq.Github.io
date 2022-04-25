@@ -94,17 +94,20 @@ $installDb = new Typecho_Db($config['adapter'], $config['prefix']);
 
 （php是一个弱语言，把一个字符串和另一个类拼接在一起，会强制将类转化成字符串，这时就会触发魔法函数__toString）
 
- 
 
-![img](file:///C:\Users\zhangbb\AppData\Local\Temp\ksohtml23176\wps1.jpg) 
 
- 
+ ![wps1](https://user-images.githubusercontent.com/85486547/165091525-f92c7b0d-2527-4ce0-9f8a-c6d73d103b17.jpg)
+
+
+
+
 
 \4. 接下来就是在文件中查找__toString 的函数
 
 在/var/Typecho/Feed.php 中有__toString函数 在这里依旧没有发现可以直接调用的危险函数.
+![wps2](https://user-images.githubusercontent.com/85486547/165090636-233a768c-3b06-4e61-8ab0-626c240d1f6c.jpg)
 
-![img](file:///C:\Users\zhangbb\AppData\Local\Temp\ksohtml23176\wps2.jpg) 
+
 
 分析代码
 
@@ -112,7 +115,7 @@ $installDb = new Typecho_Db($config['adapter'], $config['prefix']);
 
 $item 是通过$this->items的foreach循环出来的
 
-![img](file:///C:\Users\zhangbb\AppData\Local\Temp\ksohtml23176\wps3.jpg) 
+![wps3](https://user-images.githubusercontent.com/85486547/165090764-c724975a-340c-4962-8eaa-cc8d5ab66cdc.jpg)
 
  
 
@@ -129,8 +132,8 @@ $item 是通过$this->items的foreach循环出来的
 所以当代码执行到290行：$item[‘author’]->screenName
 
 就会触发__get()魔法函数。
+![wps4](https://user-images.githubusercontent.com/85486547/165090803-ddffbf83-0d25-49e5-91bc-3075dddef070.jpg)
 
-![img](file:///C:\Users\zhangbb\AppData\Local\Temp\ksohtml23176\wps4.jpg) 
 
  
 
@@ -142,15 +145,15 @@ Typecho_Request类
 
 发现__get()魔法函数调用了get函数
 
-![img](file:///C:\Users\zhangbb\AppData\Local\Temp\ksohtml23176\wps5.jpg) 
+![wps5](https://user-images.githubusercontent.com/85486547/165090850-c06bfcb5-075a-48d8-95d6-86440a85d047.jpg)
 
  
 
 get()函数 用调用了_applyFilter()函数
 
-![img](file:///C:\Users\zhangbb\AppData\Local\Temp\ksohtml23176\wps6.jpg) 
 
  
+![wps6](https://user-images.githubusercontent.com/85486547/165090884-2b9d34ea-85f9-4a2d-ae0c-323b48089cc8.jpg)
 
 ```php
 在_applyFilter()函数中发现 array_map()函数和call_user_func()函数
@@ -159,6 +162,7 @@ array_map() ：返回用户自定义函数作用后的数组。回调函数接�
 
 array_map(function,array1,array2,array3...)
 
+![wps7](https://user-images.githubusercontent.com/85486547/165090944-481e59fe-f53c-475c-9605-718f0b4ca527.jpg)
 
 call_user_func() ：调用回调函数，第一个参数 callback 是被调用的回调函数，其余参数是回调函数的参数。参数可以有多个，也可以是数组。
 
@@ -166,7 +170,7 @@ call_user_func() ：调用回调函数，第一个参数 callback 是被调用�
 这两个函数可以执行任意代码，这时要 分析call_user_func($filter,$value)中变量$filter和$value 是否可控，如果不可控就不可以直接利用。
 ```
 
-![img](file:///C:\Users\zhangbb\AppData\Local\Temp\ksohtml23176\wps7.jpg) 
+ 
 
 ```php
 由  foreach ($this->_filter as $filter)
@@ -176,7 +180,8 @@ call_user_func() ：调用回调函数，第一个参数 callback 是被调用�
 是可控的
 ```
 
-![img](file:///C:\Users\zhangbb\AppData\Local\Temp\ksohtml23176\wps8.jpg)
+![wps8](https://user-images.githubusercontent.com/85486547/165091022-d1970339-be22-402a-9c71-8f6cea86ff1c.jpg)
+
 
 ```php
 /var/Typecho/Request.php
@@ -186,7 +191,8 @@ call_user_func() ：调用回调函数，第一个参数 callback 是被调用�
 $value也是可控的。
 ```
 
-![img](file:///C:\Users\zhangbb\AppData\Local\Temp\ksohtml23176\wps9.jpg) 
+
+![wps9](https://user-images.githubusercontent.com/85486547/165091070-ee4d07dd-ee00-411e-bf7b-483fc3e0cd30.jpg)
 
 这时，call_user_func($filter,$value)中变量$filter和$value 都是可控的。这里就是php的反序列化漏洞，这个漏洞可以执行任意代码。
 
@@ -214,7 +220,8 @@ Referer需要是本站
 
 可控参数 __typecho_config 传给了$config ，这里的key就是 __typecho_config 可以	通过cookie或者post传入
 
-![img](file:///C:\Users\zhangbb\AppData\Local\Temp\ksohtml23176\wps10.jpg) 
+
+![wps10](https://user-images.githubusercontent.com/85486547/165091112-2ed5062a-ce4d-4359-a9ed-0e9dfbf088f4.jpg)
 
  
 
@@ -230,7 +237,7 @@ Referer需要是本站
 
 Pyload: 
 
-![img](file:///C:\Users\zhangbb\AppData\Local\Temp\ksohtml23176\wps11.jpg) 
+![wps11](https://user-images.githubusercontent.com/85486547/165091166-67f72523-d5ac-4aa2-a8b1-deb3d4163e69.jpg)
 
 ```php
 <?php
