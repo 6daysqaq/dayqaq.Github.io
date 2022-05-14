@@ -248,7 +248,7 @@ dos攻击
 <!xml version='1.0' encoding="utf-8"?>
 <!DOCTYPE ANY[ <!ENTITY test 'this is test'>]>
 <root>&test;<root>
-如果&test;变成'this is test'，就进行第二步
+如果&test;变成'this is test'，就进行第下一步
 ```
 
 **3.检测服务器是否支持外部实体**
